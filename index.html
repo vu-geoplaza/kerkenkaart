@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+
+        <title lang="nl" data-lang-token="1">Geoplaza kerkenkaart</title>
+
+        <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+
+        <meta name="author" content="Peter Vos, Herman Wesselink">
+        <meta name="description" content="Map of Church buildings after 1850  in the Netherlands">
+        <meta name="keywords" content="HTML,CSS,JavaScript,VU Geoplaza,churches,kerken,VU University Amsterdam,Architecture,Religous history">
+
+        <link href="/projects/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="js/ol/ol.css" type="text/css" />
+        <link rel="stylesheet" href="css/jquery-ui.css" type="text/css" />
+        <link rel="stylesheet" href="css/kerken.css" type="text/css" />
+
+        <script type='text/javascript' src='js/ol/ol.js'></script>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="js/jquery-ui-1.12.1.custom/jquery-ui.min.js" type="text/javascript"></script>
+        <script src="js/jquery.ui.touch-punch.js" type="text/javascript"></script>
+        <script src="js/jquery.scrollintoview.min.js" type="text/javascript"></script>
+
+        <script src="/projects/bootstrap/js/bootstrap.min.js"></script>
+
+        <script src='js/lang.js' type='text/javascript'></script>
+        <script src='js/kerkenViewer.js' type='text/javascript'></script>
+
+        <script type="text/javascript">
+
+            var viewer = new kerkenViewer();
+            var layerName = "";
+            var p = getUrlVars();
+            if (typeof p['id'] != "undefined") {
+                // Get year + regel
+                var idView = true;
+                var startid = p['id'];
+            }
+
+            $('document').ready(function () {
+                var w = $('#leftcolumncontainer').width();
+                $('#panel').css('left', (w + 10) + 'px');
+                viewer.info.init();
+                viewer.list.init();
+                viewer.filter.init();
+                viewer.initMap('map', 'panel');
+                $('#legendheader select').on('change', function() {
+                    viewer.setStyle(this.value);
+                    viewer.legend.init(this.value);
+                })
+                update(true);
+            });
+
+            function update(bZoom, kerkid) {
+                bZoom = typeof bZoom !== 'undefined' ? bZoom : false;
+                kerkid = typeof kerkid !== 'undefined' ? kerkid : false;
+                viewer.loadSource({
+                            
+                        }, bZoom, kerkid, 'denominatie', true);
+                // This prevents the offset in map.forEachFeatureAtPixel
+                viewer.map.updateSize();
+            }
+
+            $(window).resize(function () {
+                var w = $('#leftcolumncontainer').width();
+                $('#panel').css('left', (w + 10) + 'px');
+            });
+
+            function getUrlVars() {
+                var vars = {};
+                var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+                    vars[key] = value;
+                });
+                return vars;
+            }
+
+            function inIframe() {
+                try {
+                    return window.self !== window.top;
+                } catch (e) {
+                    return true;
+                }
+            }
+        </script>
+    </head>
+
+    <body>
+        <div id="panel">
+            <div class="olButton mapButtonActive mapButton ui-corner-all controlLegend" title="Show legend">
+                <span id="legendButton" class="legendicon panelicon"></span>
+            </div>
+            <div class="olButton mapButton ui-corner-all controlBaseLayer" title="Change base layer">
+                <span id="baseLayerButton" class="layericon panelicon"></span>
+            </div>
+            <div data-toggle="modal" data-target="#infoModal" class="olButton mapButton ui-corner-all controlInfoModal" title="Information">
+                <span id="infoButton" class="glyphicon glyphicon-info-sign"></span>
+            </div>
+            <div data-toggle="modal" data-target="#helpModal" class="olButton mapButton ui-corner-all controlHelpModal" title="Help">
+                <span id="infoButton" class="glyphicon glyphicon-question-sign"></span>
+            </div>
+            <div data-toggle="modal" data-target="#filterModal" class="olButton mapButton ui-corner-all controlFilterModal" title="Filter">
+                <span id="infoButton" class="glyphicon glyphicon-wrench"></span>
+            </div>
+            <div class="olButton mapButton ui-corner-all controlFit" title="Zoom to extent">
+                <span id="fitButton" class="fiticon panelicon"></span>
+            </div>
+            <!--<div class="olButton mapButton ui-corner-all controlLanguage" title="Language">
+                <div id="languageButton" class="buttonLanguage">NL</div>
+            </div>
+            <div data-toggle="modal" data-target="#downloadModal" class="olButton mapButton ui-corner-all controlDownloadModal" title="Download">
+                <span id="fitButton" class="glyphicon glyphicon-download-alt"></span>
+            </div>-->
+        </div>
+
+        <div id='legendheader' class="header">
+            <span class='header-text' lang="nl" data-lang-token="2">Legenda en filter
+            <select style="color: black; margin-left:15px;">
+                <option value="denominatie" selected="selected">denominatie</option>
+                <option value="type">vorm</option>
+                <option value="stijl">stijl</option>
+            </select>
+            </span>
+        </div>
+        <div id="leftcolumncontainer" class="scroll-pane jspScrollable">
+            <div id="leftcolumn">
+                <div id="legend" class="container-fluid">
+                </div>
+
+            </div>
+        </div>        
+
+        <div id='resheader' class="column_items header">
+            <span class='header-text' lang="nl" data-lang-token="3">Getoonde kerken(<span id="restot"></span>)</span>
+            <span class="glyphicon glyphicon-plus resbutton pull-right"></span>
+        </div>
+        <div id="rightcolumncontainer" class="tab">
+            <div id="rightcolumn" class="">
+                <div id="res">
+                </div>
+            </div>
+            <div id="info" class="" style="display:none;">
+                <div class="info-buttons header">
+                    <span class='header-text' lang="nl" data-lang-token="5">Beschrijving</span>
+                    <button type="button" class="zoom" data-toggle="tooltip" title="" aria-label="Zoom">
+                        <span aria-hidden="true"><span class="mapButton mapButtonActive glyphicon glyphicon-search"></span></span>
+                    </button>
+                    <button type="button" class="close pull-right" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div id="info-content">
+                </div>
+            </div>
+        </div>
+
+        <div id="geoplaza_attribution">
+            <span style="font-family: Lucida Sans Unicode,Lucida Grande ,sans-serif" lang="nl" data-lang-token="8">Kaart gemaakt door <a href="http://geoplaza.vu.nl">VU Geoplaza</a>, h&eacute;t VU portaal voor GIS en geodata.<br><div style="font-size: 0.8em;">Geoplaza is een samenwerking tussen de <a href="http://www.ub.vu.nl">Universiteitsbibliotheek</a> en het <a href="http://spinlab.vu.nl/">SPINlab</a>.</div><br><a href="http://geoplaza.vu.nl/cms/contact">contact</a></span>
+        </div>
+        <div id="baseLayerSwitcher" class="" style="display:none;">
+            <div class="info-buttons header">
+                <span class='header-text' lang="nl" data-lang-token="9">Kies basiskaart</span>
+                <button type="button" class="close pull-right" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="baseLayersList">
+            </div>
+        </div>
+        <div id="map" class="smallmap"></div>
+
+        <div id="helpModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title" lang="nl" data-lang-token="12">Help</h4>
+                    </div>
+                    <div class="modal-body">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="filterModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title" lang="nl" data-lang-token="12">Filter</h4>
+                    </div>
+                    <div class="modal-body">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default btn-filter">Update</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="infoModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Info</h4>
+                    </div>
+                    <div class="modal-body">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </body>
+
+</html>
+
+
