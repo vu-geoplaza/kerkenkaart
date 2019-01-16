@@ -1,19 +1,19 @@
-<?php
+ <?php
 
 include('db.php');
 
-#$begin = filter_input(INPUT_POST, 'begin', FILTER_VALIDATE_INT);
-
-
 $db = new db();
-$list = $db->getAll();
+
+
+
 if (isset($_POST['filter'])) {
-    $data = createGeoJSON($list, $_POST['filter']);
+    $data = createGeoJSON($db->getFiltered($_POST['filter']));
 } else {
-    $data = createGeoJSON($list, false);
+    $data = createGeoJSON($db->getAll());
 }
 header('Content-Type: application/json');
 echo json_encode($data);
+
 
 /**
  * Create a standard object that can be encoded to json.
@@ -22,7 +22,7 @@ echo json_encode($data);
  * @param array $l An array of database row results
  * @return object
  */
-Function createGeoJSON($l, $filter)
+Function createGeoJSON($l)
 {
     $geo = new stdClass();
     $geo->type = "FeatureCollection";
@@ -32,16 +32,8 @@ Function createGeoJSON($l, $filter)
     $n = 0;
 
     foreach ($l as $row) {
-        $add = True;
-        if ($filter) {
-            foreach ($filter as $property=>$val) {
-                if (!in_array($row[$property], $val)) {
-                    error_log($row[$property]);
-                    $add = False;
-                }
-            }
-        }
-        if ($add) {
+
+
             $geo->features[$n] = new stdClass();
             $geo->features[$n]->type = "Feature";
             $geo->features[$n]->geometry = new stdClass();
@@ -50,15 +42,27 @@ Function createGeoJSON($l, $filter)
             $geo->features[$n]->geometry->coordinates[1] = (double)$row['lat'];
             $geo->features[$n]->properties = new stdClass();
             $geo->features[$n]->properties->kerk_id = $row['id'];
-            $geo->features[$n]->properties->naam = $row['plaats'] . ', ' . $row['naam'];
+            $geo->features[$n]->properties->naam = $row['naam'];
             if ($row['denominatie']=='Nederlandse Protestanten Bond'){
                 $row['denominatie']='Nederlandse Protestantenbond';
+            }
+            if ($row['denominatie']=='Hersteld Hervormde Kerk'){
+                $row['denominatie']='Overig';
             }
             $geo->features[$n]->properties->denominatie = $row['denominatie'];
             $geo->features[$n]->properties->type = $row['type'];
             $geo->features[$n]->properties->stijl = $row['stijl'];
+            if ($row['huidige_bestemming']=='kerk'){
+                $hb='kerk';
+            } else {
+                $hb='anders';
+            }
+            $geo->features[$n]->properties->huidige_bestemming = $hb;
+            $geo->features[$n]->properties->plaats = $row['plaats'];
+            $geo->features[$n]->properties->monument = $row['monument'];
+            $geo->features[$n]->properties->ingebruik = $row['ingebruik'];
+            $geo->features[$n]->properties->periode = $row['periode'];
             $n++;
-        }
     }
     return $geo;
 }

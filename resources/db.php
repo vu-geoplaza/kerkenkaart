@@ -1,7 +1,10 @@
 <?php
+
 //error_reporting(E_ALL);
 //ini_set('display_errors', 1);
 include 'config.php';
+
+define('DB_VIEW','vw_viewer_data');
 
 /**
  * Description of db
@@ -15,13 +18,70 @@ class db {
         $this->dbh = new PDO("pgsql:host=" . DBHOST . ";port=" . DBPORT . ";dbname=" . DB . ";user=" . DBUSER . ";password=" . DBPW) or die('connection failed');
     }
 
-    Function getAll() {
+    Function getFiltered($filter) {
+        /* Available filters:
+         * Plaats
+         * Naam
+         * Architect
+         * 
+         * Denominatie
+         * Stijl
+         * Type
+         * 
+         * $filter['<filter>'] = Array of requested values
+         */
+        $filter_options = ['plaats', 'denominatie', 'stijl', 'type', 'monument', 'periode', 'gemeente', 'provincie'];
+        $sql = 'SELECT * FROM '.DB_VIEW.' WHERE';
+        foreach ($filter_options as $field) {
+            if (isset($filter[$field])) {
+                $s = implode('\',\'', $filter[$field]);
+                $sql .= ' ' . $field . ' IN (\'' . $s . '\') AND';
+            }
+        }
+        if (isset($filter['huidige_bestemming'])) {
+            if ($filter['huidige_bestemming'] == ['kerk']) {
+                $sql .= ' huidige_bestemming=\'kerk\' AND';
+            } else {
+                $sql .= ' huidige_bestemming<>\'kerk\' AND';
+            }
+        }
+
+        $ids = array();
+        if (isset($filter['architect'])) {
+            $this->dbh->exec("SET CHARACTER SET utf8");
+            $a = str_replace('&amp;', '&', implode('\',\'', $filter['architect']));
+            $sqla = 'SELECT "ID" from "013_Architect" WHERE "Architect" IN (\'' . $a . '\')';
+            $sth = $this->dbh->prepare($sqla);
+            $sth->execute();
+            $id_s = $sth->fetchAll(PDO::FETCH_COLUMN, 0);
+            $sql .= ' id IN (' . implode(',', $id_s) . ') AND';
+        }
+
+        if (isset($filter['naam'])) {
+            $this->dbh->exec("SET CHARACTER SET utf8");
+            $a = implode('\',\'', $filter['naam']);
+            $sqla = 'SELECT "ID" from "011_Naam_Kerk" WHERE "Naam_Kerk" IN (\'' . $a . '\')';
+            $sth = $this->dbh->prepare($sqla);
+            $sth->execute();
+            $id_s = $sth->fetchAll(PDO::FETCH_COLUMN, 0);
+            $sql .= ' id IN (' . implode(',', $id_s) . ') AND';
+        }
+
+        $sql = substr($sql, 0, -4) . ' ORDER BY plaats, naam';
+        error_log($sql);
         $this->dbh->exec("SET CHARACTER SET utf8");
-        $sql = "SELECT * from vw_viewer_data";
         $sth = $this->dbh->prepare($sql);
         $sth->execute();
         $res = $sth->fetchAll(PDO::FETCH_ASSOC);
-        error_log(print_r($res, true));
+        return $res;
+    }
+
+    Function getAll() {
+        $this->dbh->exec("SET CHARACTER SET utf8");
+        $sql = "SELECT * from ".DB_VIEW." ORDER BY plaats, naam";
+        $sth = $this->dbh->prepare($sql);
+        $sth->execute();
+        $res = $sth->fetchAll(PDO::FETCH_ASSOC);
         return $res;
     }
 
@@ -32,12 +92,12 @@ class db {
         $sth->execute(array(":id" => $id));
         $res['hoofdtabel'] = $sth->fetchAll(PDO::FETCH_ASSOC);
 
-        $sql = 'SELECT * FROM "011_Naam_Kerk" WHERE "ID"=:id';
+        $sql = 'SELECT * FROM "011_Naam_Kerk" WHERE "ID"=:id ORDER BY "Van" ASC';
         $sth = $this->dbh->prepare($sql);
         $sth->execute(array(":id" => $id));
         $res['naam'] = $sth->fetchAll(PDO::FETCH_ASSOC);
 
-        $sql = 'SELECT * FROM "012_Denominatie" WHERE "ID"=:id';
+        $sql = 'SELECT * FROM "012_Denominatie" WHERE "ID"=:id ORDER BY "Van" ASC';
         $sth = $this->dbh->prepare($sql);
         $sth->execute(array(":id" => $id));
         $res['denominatie'] = $sth->fetchAll(PDO::FETCH_ASSOC);
@@ -51,6 +111,96 @@ class db {
         $sth = $this->dbh->prepare($sql);
         $sth->execute(array(":id" => $id));
         $res['bronnen'] = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+        $sql = 'SELECT lon,lat FROM vw_viewer_data WHERE id=:id';
+        $sth = $this->dbh->prepare($sql);
+        $sth->execute(array(":id" => $id));
+        $res['lokatie'] = $sth->fetchAll(PDO::FETCH_ASSOC);        
+        
+        $sql = 'SELECT pand_id FROM ngr_locatie_latlon WHERE id=:id';
+        $sth = $this->dbh->prepare($sql);
+        $sth->execute(array(":id" => $id));
+        $res['bag_pand_id'] = $sth->fetchAll(PDO::FETCH_ASSOC);        
+        return $res;
+    }
+
+    function isFilterSet($filter) {
+        foreach ($filter as $key => $val) {
+            error_log($key);
+            error_log(count($val));
+            if (count($val) > 0) {
+                return True;
+            }
+        }
+        return False;
+    }
+
+    function getTypeaheadList($filter, $select) {
+        if ($this->isFilterSet($filter)) {
+            $list = $this->getFiltered($filter);
+            $ids = array();
+            $n = 0;
+            foreach ($list as $row) {
+                $ids[$n] = $row['id'];
+                $n++;
+            }
+            $sql_id = ' WHERE "ID" IN (' . implode(',', $ids) . ')';
+            $sql_id_loc = ' WHERE id IN (' . implode(',', $ids) . ')';
+        } else {
+            $sql_id = '';
+            $sql_id_loc = '';
+        }
+        if ($select == 'architect') {
+            $sql = 'SELECT DISTINCT "Architect" FROM "013_Architect"' . $sql_id. 'ORDER BY "Architect"';
+        }
+        if ($select == 'plaats') {
+            $sql = 'SELECT DISTINCT "Plaats" FROM "01_Hoofdtabel_Kerken"' . $sql_id. 'ORDER BY "Plaats"';
+        }
+        if ($select == 'naam') {
+            $sql = 'SELECT DISTINCT "Naam_Kerk" FROM "011_Naam_Kerk"' . $sql_id. 'ORDER BY "Naam_Kerk"';
+        }
+        if ($select == 'gemeente') {
+            $sql = 'SELECT DISTINCT gemeentenaam FROM ngr_locatie_latlon ' . $sql_id_loc. 'ORDER BY gemeentenaam';
+        }
+        if ($select == 'provincie') {
+            $sql = 'SELECT DISTINCT provincienaam FROM ngr_locatie_latlon ' . $sql_id_loc. 'ORDER BY provincienaam';
+        }
+        error_log($select);
+        error_log($sql);
+        $sth = $this->dbh->prepare($sql);
+        $sth->execute();
+        $res = $sth->fetchAll(PDO::FETCH_COLUMN, 0);
+        return $res;
+    }
+
+    function getFilterState($filter) {
+        error_log(print_r($filter, true));
+        $res['denominatie'] = [];
+        $res['stijl'] = [];
+        $res['type'] = [];
+        $res['monument'] = [];
+        $res['huidige_bestemming'] = [];
+        $res['periode'] = [];
+        if ($this->isFilterSet($filter)) {
+            error_log(print_r($filter, true));
+            $list = $this->getFiltered($filter);
+
+            foreach ($list as $row) {
+                foreach ($res as $opt => $val) {
+                    $v = $row[$opt];
+                    if ($opt == 'huidige_bestemming') {
+                        if ($v!=='kerk'){
+                            $v='anders';
+                        }
+                    }
+                    if (!in_array($v, $res[$opt])) {
+                        array_push($res[$opt], $v);
+                    }
+                }
+            }
+        } else {
+            return False;
+        }
         return $res;
     }
 
@@ -120,4 +270,12 @@ function decToDeg($coord, $lat) {
         $c = sprintf("%d&deg;%d'%d\"%s", $deg, $min, $sec, $ispos ? 'E' : 'W');
     }
     return $c;
+}
+
+function pdo_debugStrParams($stmt) {
+  ob_start();
+  $stmt->debugDumpParams();
+  $r = ob_get_contents();
+  ob_end_clean();
+  return $r;
 }

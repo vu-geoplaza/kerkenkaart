@@ -9,9 +9,32 @@
  *  Version: 14 june 2018, 0.95 Periode legend, better filter typeahead
  *
  */
+//['rgb(166,206,227)','rgb(31,120,180)','rgb(178,223,138)','rgb(51,160,44)','rgb(251,154,153)','rgb(227,26,28)','rgb(253,191,111)','rgb(255,127,0)','rgb(202,178,214)','rgb(106,61,154)','rgb(255,255,153)','rgb(177,89,40)']
 
 var classification = {};
-
+/*
+classification['denominatie'] = {
+    "Christelijke Gereformeerde Kerk": [166, 206, 227, 1],
+    "Christian Science Church": [253, 191, 111, 1],
+    "Doopsgezinde Sociëteit": [178, 223, 138, 1],
+    "Evangelisch Lutherse Kerk (PKN)": [51, 160, 44, 1],
+    "Gereformeerde Gemeente (in Nederland)": [251, 154, 153, 1],
+    "Gereformeerde Kerk (vrijgemaakt)": [227, 26, 28, 1],
+    "Gereformeerde Kerken (PKN)": [31, 120, 180, 1],
+    //"Hersteld Hervormde Kerk": [255,127,0, 1],
+    "Nederlandse Hervormde Kerk (PKN)": [106, 61, 154, 1],
+    "Nederlandse Protestantenbond": [202, 178, 214, 1],
+    //"Nederlandse Protestanten Bond": [64, 0, 64, 1],
+    "Oud-Katholieke Kerk": [255, 255, 153, 1],
+    //"PKN": [177,89,40, 1],
+    //"Gereformeerde Gemeente buiten Verband": [0, 255, 0, 1],
+    "Remonstrantse Broederschap": [177, 89, 40, 1],
+    "Rooms-katholieke Kerk": [255, 127, 0, 1],
+    "Overig": [128, 128, 0, 1],
+    //"Nederlands Hervormde Kerk": [128, 128, 0, 1],
+    "Grey": [211, 211, 211, 1],
+}
+*/
 
 classification['denominatie'] = {
     "Christelijke Gereformeerde Kerk": [166, 206, 227, 1],
