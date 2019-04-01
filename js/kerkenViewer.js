@@ -979,7 +979,10 @@ kerkenViewer.prototype.resizeRight = function () {
     // #rightcolumn, #info, #geoplaza_attribution
     const windowheight = $('#map').height() - 5;
     const resheaderheight = $('#resheader').outerHeight();
-    const attrheight = $('#geoplaza_attribution').outerHeight(); // fixed
+    var attrheight = $('#geoplaza_attribution').outerHeight(); // fixed
+    if (!$('#geoplaza_attribution').is(":visible")) {
+        attrheight = 0;
+    }
     const info = $('#info').is(":visible");
     const res = $('#res').is(":visible");
     const availableheight = windowheight - attrheight - resheaderheight;
