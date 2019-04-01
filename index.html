@@ -40,6 +40,12 @@
             var viewer = new kerkenViewer();
 
             $('document').ready(function () {
+                $('#attrbutton').click(function () {
+                    $(this).toggleClass('glyphicon-minus');
+                    $(this).toggleClass('glyphicon-plus');
+                    $('.attrcontent').toggle();
+                    viewer.updateSize();
+                });
                 if (inIframe()) {
                     $('.controlInfoModal').hide();
                     $('#geoplaza_attribution').hide();
@@ -92,6 +98,7 @@
                     var w = $('#leftcolumncontainer').width();
                 }
                 $('#panel').css('left', (w + 10) + 'px');
+                viewer.updateSize();
             });
 
             function getUrlVars() {
@@ -138,7 +145,7 @@
 
         <div id='legendheader' class="header">
             <div class='header-text' lang="nl" data-lang-token="2" style="float: left;">Legenda</div>
-            <div class="select-style" style="float: right;color:black;width:170px;">
+            <div class="select-style" style="float: right;color:black;width:150px;">
                 <select>
                     <option value="denominatie" selected="selected">denominatie</option>
                     <option value="type">vorm</option>
@@ -183,11 +190,19 @@
         </div>
 
         <div id="geoplaza_attribution">
-            Kaart gemaakt door <a href="http://geoplaza.vu.nl">VU Geoplaza</a>, h&eacute;t VU portaal voor GIS en geodata (<a target="_blank" href="http://geoplaza.vu.nl/cms/contact">contact</a>)
-            . Kerkendatabase samengesteld door <a target="_blank" href="http://www.hermanwesselink.nl/index.php?page=onderzoek-kerkgebouwen-1800-1970">Herman Wesselink</a>
-            <br><br>
-            Heeft u vragen, opmerkingen of aanvullende informatie? Stuur dan een <a href="mailto:&#104;&#101;&#114;&#109;&#97;&#110;&#119;&#101;&#115;&#115;&#101;&#108;&#105;&#110;&#107;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;&#63;&#99;&#99;&#61;&#103;&#101;&#111;&#112;&#108;&#97;&#122;&#97;&#46;&#117;&#98;&#64;&#118;&#117;&#46;&#110;&#108;&#38;&#115;&#117;&#98;&#106;&#101;&#99;&#116;&#61;&#107;&#101;&#114;&#107;&#101;&#110;&#107;&#97;&#97;&#114;&#116;">email</a>.
+            <div class="attrheader"><span class="glyphicon glyphicon-minus pull-right" id="attrbutton"></span></div>
+            <div class="attrcontent">
+                <p>Kaart gemaakt door <a href="http://geoplaza.vu.nl">VU Geoplaza</a>, h&eacute;t VU portaal voor GIS en
+                    geodata (<a target="_blank" href="http://geoplaza.vu.nl/cms/contact">contact</a>). Kerkendatabase
+                    samengesteld door <a target="_blank"
+                                         href="http://www.hermanwesselink.nl/index.php?page=onderzoek-kerkgebouwen-1800-1970">Herman
+                        Wesselink</a></p>
+                <p>Heeft u vragen, opmerkingen of aanvullende informatie? Stuur dan een <a
+                        href="mailto:&#104;&#101;&#114;&#109;&#97;&#110;&#119;&#101;&#115;&#115;&#101;&#108;&#105;&#110;&#107;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;&#63;&#99;&#99;&#61;&#103;&#101;&#111;&#112;&#108;&#97;&#122;&#97;&#46;&#117;&#98;&#64;&#118;&#117;&#46;&#110;&#108;&#38;&#115;&#117;&#98;&#106;&#101;&#99;&#116;&#61;&#107;&#101;&#114;&#107;&#101;&#110;&#107;&#97;&#97;&#114;&#116;">email</a>.
+                </p>
+            </div>
         </div>
+
         <div id="baseLayerSwitcher" class="" style="display:none;">
             <div class="info-buttons header">
                 <span class='header-text' lang="nl" data-lang-token="9">Kies basiskaart</span>
