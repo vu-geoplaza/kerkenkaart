@@ -12,29 +12,6 @@
 //['rgb(166,206,227)','rgb(31,120,180)','rgb(178,223,138)','rgb(51,160,44)','rgb(251,154,153)','rgb(227,26,28)','rgb(253,191,111)','rgb(255,127,0)','rgb(202,178,214)','rgb(106,61,154)','rgb(255,255,153)','rgb(177,89,40)']
 
 var classification = {};
-/*
-classification['denominatie'] = {
-    "Christelijke Gereformeerde Kerk": [166, 206, 227, 1],
-    "Christian Science Church": [253, 191, 111, 1],
-    "Doopsgezinde Sociëteit": [178, 223, 138, 1],
-    "Evangelisch Lutherse Kerk (PKN)": [51, 160, 44, 1],
-    "Gereformeerde Gemeente (in Nederland)": [251, 154, 153, 1],
-    "Gereformeerde Kerk (vrijgemaakt)": [227, 26, 28, 1],
-    "Gereformeerde Kerken (PKN)": [31, 120, 180, 1],
-    //"Hersteld Hervormde Kerk": [255,127,0, 1],
-    "Nederlandse Hervormde Kerk (PKN)": [106, 61, 154, 1],
-    "Nederlandse Protestantenbond": [202, 178, 214, 1],
-    //"Nederlandse Protestanten Bond": [64, 0, 64, 1],
-    "Oud-Katholieke Kerk": [255, 255, 153, 1],
-    //"PKN": [177,89,40, 1],
-    //"Gereformeerde Gemeente buiten Verband": [0, 255, 0, 1],
-    "Remonstrantse Broederschap": [177, 89, 40, 1],
-    "Rooms-katholieke Kerk": [255, 127, 0, 1],
-    "Overig": [128, 128, 0, 1],
-    //"Nederlands Hervormde Kerk": [128, 128, 0, 1],
-    "Grey": [211, 211, 211, 1],
-}
-*/
 
 classification['denominatie'] = {
     "Christelijke Gereformeerde Kerk": [166, 206, 227, 1],
@@ -250,24 +227,23 @@ kerkenFilter.prototype.setFilterState = function () {
             $(':checkbox').parent().removeClass('missing');
         }
     });
-
-}
+};
 
 kerkenInfo.prototype.init = function () {
 // set the close button on the kerkeninfo div
     $('#info button.close').click(function () {
         $('#info').hide();
         // give space back to the kerken list
-        $('#rightcolumn').css('height', '100%');
         $('#resultlist li').removeClass('selected');
         viewer.removeHighlightFeature();
+        viewer.updateSize();
     });
-}
+};
 
 kerkenLegend.prototype.init = function (legendClass, params) {
     $('#legend').html(this.createHTML(legendClass));
     this.setCounters(legendClass, true);
-}
+};
 
 kerkenList.prototype.init = function () {
     var me = this;
@@ -283,8 +259,7 @@ kerkenList.prototype.init = function () {
             $(this).removeClass('glyphicon-minus');
             $(this).addClass('glyphicon-plus');
         }
-
-
+        viewer.updateSize();
     });
 }
 
@@ -363,15 +338,15 @@ kerkenFilter.prototype.setTypeahead = function () {
         me.typeahead_source = res;
         $('.search .typeahead').typeahead('destroy', 'NoCached')
         $('.search .typeahead').typeahead({
-            hint: true,
-            highlight: true,
-            minLength: 0
-        },
-                {
-                    limit: 15,
-                    name: 'list',
-                    source: substringMatcher(res)
-                });
+                hint: true,
+                highlight: true,
+                minLength: 0
+            },
+            {
+                limit: 15,
+                name: 'list',
+                source: substringMatcher(res)
+            });
     });
 
 }
@@ -588,28 +563,44 @@ kerkenViewer.prototype.initMap = function (mapDiv, panelDiv) {
 // Ininitializes opening the info div when clicking on a feature
     this.map.on('click', function (evt) {
         var feature = me.map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
-            //return feature;
-            var clusterfeatures = feature.get('features');
-            if (clusterfeatures.length == 1) {
-                return clusterfeatures[0]
-            } else {
-                return false
+                //return feature;
+                var clusterfeatures = feature.get('features');
+                if (clusterfeatures.length == 1) {
+                    return clusterfeatures[0]
+                } else {
+                    return false
+                }
+            }, {
+                layerFilter: function (layer) {
+                    return layer === me.kerkenLayer;
+                },
+                hitTolerance: 5 // important for touch
             }
-        }, {
-            layerFilter: function (layer) {
-                return layer === me.kerkenLayer;
-            },
-            hitTolerance: 5 // important for touch
-        }
         );
         if (feature) {
             me.info.show(feature); //PV An array because of the clustered features!
         }
     });
-// Add a button for a zoom to fit
+    // Add a button for a zoom to fit
     $('.controlFit').click(function () {
         me.zoomToExtent();
     });
+
+    // refreshes the map when the user goes back to an inactive browser tab
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            //setTimeout( function() { me.map.renderSync();}, 200);
+            //renderSync is not enough, force source reload?
+            console.log('refresh layers');
+            me.map.getLayers().forEach(function (layer) {
+                layer.changed();
+            });
+            setTimeout(function () {
+                me.map.renderSync();
+            }, 500);
+        }
+    });
+
 }
 ;
 /**
@@ -635,27 +626,28 @@ kerkenViewer.prototype.initBaseLayerSwitcher = function () {
         $('#baseLayerSwitcher').toggle();
         $('.controlBaseLayer').toggleClass('mapButtonActive');
     });
+
     function addLayerToList(layer) {
         var item = $('<li>', {
             "data-icon": "check",
             "class": layer.get('visible') ? "checked" : ""
         })
-                .append($('<a />', {
+            .append($('<a />', {
                     text: layer.get('name')
                 })
-                        .click(function () {
-                            var layers = me.map.getLayers();
-                            layers.forEach(function (element, index, arr) {
-                                if (element.get('type') == 'base') {
-                                    element.setVisible(false);
-                                }
-                            });
-                            layer.setVisible(true);
-                            $('#baseLayersList li').removeClass('checked');
-                            $(item).toggleClass('checked');
-                        })
-                        )
-                .appendTo('#baseLayersList');
+                .click(function () {
+                    var layers = me.map.getLayers();
+                    layers.forEach(function (element, index, arr) {
+                        if (element.get('type') == 'base') {
+                            element.setVisible(false);
+                        }
+                    });
+                    layer.setVisible(true);
+                    $('#baseLayersList li').removeClass('checked');
+                    $(item).toggleClass('checked');
+                })
+            )
+            .appendTo('#baseLayersList');
     }
 
 };
@@ -719,14 +711,14 @@ kerkenViewer.prototype.loadSource = function (params, bZoom, kerkid, legendClass
             me.source = new ol.source.Vector({
                 features: features
             })
-            
+
             // maak feature source per gemeente, style cirkeldiagram
             // maak feature source per provincie, style cirkeldiagram
             // maak feature source individueel, style individueel
             // en dan maak je dus 3 layers die afhankelijk van het zoomniveau/aantal zichtbaar zij
             // met die moveend kan je wisselen 
-            
-            
+
+
             if (features.length < 300) {
                 me.clusterDistance = 0;
             } else {
@@ -781,6 +773,7 @@ kerkenViewer.prototype.loadSource = function (params, bZoom, kerkid, legendClass
 };
 kerkenViewer.prototype.setStyle = function (legendClass) {
     var me = this;
+
     function componentToHex(c) {
         var hex = c.toString(16);
         return hex.length == 1 ? "0" + hex : hex;
@@ -915,6 +908,7 @@ kerkenViewer.prototype.zoomToExtent = function () {
     this.map.getView().fit(source.getExtent(), {maxZoom: 15, padding: [100, 100, 100, 100], duration: 0});
 };
 kerkenViewer.prototype.updateSize = function () {
+    this.resizeRight();
     this.map.updateSize();
 };
 /**
@@ -979,6 +973,26 @@ kerkenViewer.prototype.removeHighlightFeature = function (feature) {
         source.removeFeature(f);
     }
 };
+
+kerkenViewer.prototype.resizeRight = function () {
+    // we have 3 items:
+    // #rightcolumn, #info, #geoplaza_attribution
+    const windowheight = $('#map').height() - 5;
+    const resheaderheight = $('#resheader').outerHeight();
+    const attrheight = $('#geoplaza_attribution').outerHeight(); // fixed
+    const info = $('#info').is(":visible");
+    const res = $('#res').is(":visible");
+    const availableheight = windowheight - attrheight - resheaderheight;
+    if (!info && res) {
+        $('#rightcolumn').height(availableheight);
+    } else if (info && !res) {
+        $('#info').height(availableheight);
+    } else {
+        $('#info').height(0.6 * availableheight);
+        $('#rightcolumn').height(0.4 * availableheight);
+    }
+};
+
 /**
  * Show the klooster list, build from the geojson
  *
@@ -1094,6 +1108,7 @@ kerkenList.prototype.showId = function (kerk_id) {
     // activate it
     $('#res_' + kerk_id).addClass('selected');
     $('#res_' + kerk_id).scrollintoview();
+
     function getPageById(id) {
         for (var i = 1; i < me.pages.length; i++) {
             for (var j = 0; j < me.pages[i].length; j++) {
@@ -1113,41 +1128,39 @@ kerkenInfo.prototype.show = function (feature) {
     //show the spinning circle of doom
     $('html,body').css('cursor', 'wait');
     $.post('resources/getKerkInfo.php',
-            {
-                "id": feature.get('kerk_id')
-            },
-            function (res) {
-                var html = res.html;
-                var data = res.json;
-                $('#resultlist li').removeClass('selected');
-                $('#info-content').html(html);
-                // take some space from the right column
-                $('#rightcolumn').css('height', '40%');
+        {
+            "id": feature.get('kerk_id')
+        },
+        function (res) {
+            var html = res.html;
+            var data = res.json;
+            $('#resultlist li').removeClass('selected');
+            $('#info-content').html(html);
+            $('#info').show();
 
-                $('#info').show();
-                // done waiting
-                $('html,body').css('cursor', 'auto');
-                // highlight the kerken in the list and scroll it into view
-                viewer.list.showId(data.id);
-                // initialize the zoombutton
-                $('#info button.zoom').unbind("click");
-                $('#info button.zoom').addClass('active');
-                $('#info button.zoom').removeClass('disabled');
-                $('#info button.zoom').attr('title', 'zoom');
-                $('#info button.zoom').click(function () {
-                    var kerk_id = $('#info').data('kerk_id');
-                    viewer.getFeatureByKerkAttribute('kerk_id', kerk_id);
-                    viewer.panToFeature(feature);
-                });
-                // bind the ID of the kerken to the info div
-                $('#info').data('kerk_id', data.id);
-                // highlight the feature on the map
-                viewer.highlightFeature(feature);
-                //1882 (abdijterrein); 13942 (Hallum = Egmond-Binnen)
-                me.showBag(data.bag_pand_id);
-                // reset the map rendering the avoid problems
-                viewer.updateSize();
+            // done waiting
+            $('html,body').css('cursor', 'auto');
+            // highlight the kerken in the list and scroll it into view
+            viewer.list.showId(data.id);
+            // initialize the zoombutton
+            $('#info button.zoom').unbind("click");
+            $('#info button.zoom').addClass('active');
+            $('#info button.zoom').removeClass('disabled');
+            $('#info button.zoom').attr('title', 'zoom');
+            $('#info button.zoom').click(function () {
+                var kerk_id = $('#info').data('kerk_id');
+                viewer.getFeatureByKerkAttribute('kerk_id', kerk_id);
+                viewer.panToFeature(feature);
             });
+            // bind the ID of the kerken to the info div
+            $('#info').data('kerk_id', data.id);
+            // highlight the feature on the map
+            viewer.highlightFeature(feature);
+            //1882 (abdijterrein); 13942 (Hallum = Egmond-Binnen)
+            me.showBag(data.bag_pand_id);
+            // reset the map rendering the avoid problems
+            viewer.updateSize();
+        });
 }
 
 kerkenInfo.prototype.showBag = function (pand_id) {
@@ -1155,38 +1168,38 @@ kerkenInfo.prototype.showBag = function (pand_id) {
     console.log(('0' + pand_id).slice(-16))
     //https://geodata.nationaalgeoregister.nl/bag/wfs?&request=GetFeature&typeNames=bag:pand&count=5&outputFormat=application/json&cql_filter=bag:identificatie=402100001489136
     $.get('https://geodata.nationaalgeoregister.nl/bag/wfs?', {
-        request: 'GetFeature',
-        typeNames: 'bag:pand',
-        count: 5,
-        outputFormat: 'application/json',
-        srsname: 'EPSG:3857',
-        cql_filter: 'bag:identificatie=' + pand_id
-    },
-            function (res) {
-                var geojsonFormat = new ol.format.GeoJSON();
-                var features = geojsonFormat.readFeatures(res, {
-                    dataProjection: 'EPSG:3857',
-                    featureProjection: 'EPSG:3857'
-                });
-                if (features.length > 0) {
-                    var source = viewer.bagLayer.getSource();
-                    source.addFeatures(features)
-                    
-                    var html = '<ul class="bagactueel">';
-                    html += '<li><b>Status:</b><br> ' + features[0].get('status') + '</li>';
-                    html += '<li><b>Gebruiksdoel:</b><br> ' + features[0].get('gebruiksdoel') + '</li>';
-                    //html += '<li><a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?searchQuery="'+ pand_id.padStart(16, '0') +'>Zie BAG viewer</a></li>';
-                    //https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?detailsObjectId=0362010002001823&objectId=0362100001082159
-                    html += '<li><a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?searchQuery='+pand_id.padStart(16, '0')+'" target="bag">BAG viewer link</a></li>';
-                    //html += '<li><b>Bouwjaar:</b><br> ' + features[0].get('bouwjaar') + '</li>';
-                    //html += '<li><b>Actualiteitsdatum:</b><br> ' + features[0].get('actualiteitsdatum') + '</li>'; //niet ingevuld
-                    html += '</ul>';
-                } else {
-                    var html = 'geen info gevonden';
-                }
-                $('#bag_info').html(html);
+            request: 'GetFeature',
+            typeNames: 'bag:pand',
+            count: 5,
+            outputFormat: 'application/json',
+            srsname: 'EPSG:3857',
+            cql_filter: 'bag:identificatie=' + pand_id
+        },
+        function (res) {
+            var geojsonFormat = new ol.format.GeoJSON();
+            var features = geojsonFormat.readFeatures(res, {
+                dataProjection: 'EPSG:3857',
+                featureProjection: 'EPSG:3857'
             });
-}
+            if (features.length > 0) {
+                var source = viewer.bagLayer.getSource();
+                source.addFeatures(features)
+
+                var html = '<ul class="bagactueel">';
+                html += '<li><b>Status:</b><br> ' + features[0].get('status') + '</li>';
+                html += '<li><b>Gebruiksdoel:</b><br> ' + features[0].get('gebruiksdoel') + '</li>';
+                //html += '<li><a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?searchQuery="'+ pand_id.padStart(16, '0') +'>Zie BAG viewer</a></li>';
+                //https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?detailsObjectId=0362010002001823&objectId=0362100001082159
+                html += '<li><a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?searchQuery=' + pand_id.padStart(16, '0') + '" target="bag">BAG viewer link</a></li>';
+                //html += '<li><b>Bouwjaar:</b><br> ' + features[0].get('bouwjaar') + '</li>';
+                //html += '<li><b>Actualiteitsdatum:</b><br> ' + features[0].get('actualiteitsdatum') + '</li>'; //niet ingevuld
+                html += '</ul>';
+            } else {
+                var html = 'geen info gevonden';
+            }
+            $('#bag_info').html(html);
+        });
+};
 
 kerkenInfo.prototype.update = function () {
     // On updating the map check whether the highlighted kerk is still on the map, close it if it isn't.
@@ -1195,11 +1208,11 @@ kerkenInfo.prototype.update = function () {
     if (feature === false) {
         $('#info').hide();
         // give space back to the kerken list
-        $('#rightcolumn').css('height', '100%');
         $('#resultlist li').removeClass('selected');
         viewer.removeHighlightFeature();
+        viewer.updateSize();
     }
-}
+};
 
 kerkenLegend.prototype.setCounters = function (legendClass, recount) {
     var me = this;
