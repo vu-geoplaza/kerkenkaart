@@ -66,7 +66,7 @@ function createHtml($d) {
     $html .= htmlRow('stijl', $v);
     $html .= htmlRow('stijl school', $d['stijl_school']);
     $html .= htmlRow('monumenten status', $d['monumenten_status']);
-    $rm = ($d['rijksmonument_nummer'] !== 0) && ($d['rijksmonument_nummer'] !== '') ? $d['rijksmonument_nummer'] . ' [<a href="https://cultureelerfgoed.nl/monumenten/' . $d['rijksmonument_nummer'] . '" target="_BLANK">link</a>]' : '';
+    $rm = ($d['rijksmonument_nummer'] !== 0) && ($d['rijksmonument_nummer'] !== '') ? $d['rijksmonument_nummer'] . ' [<a href="' . BASE_URL_MR . $d['rijksmonument_nummer'] . '" target="_BLANK">link</a>]' : '';
     $html .= htmlRow('rijksmonument nummer', $rm);
     $html .= htmlRow('provinciaal monument id', $d['provinciaal_monument_id']);
     $html .= htmlRow('gemeente monument id', $d['gemeente_monument_id']);
