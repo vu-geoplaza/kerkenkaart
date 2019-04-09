@@ -94,9 +94,9 @@ function bronnenHtml($d) {
         if (isset($val['auteur'])) {
             $html .= $val['auteur'];
         }
-        if (isset($val['jaar_van_uitgave'])) {
-            $html .= ' (' . $val['jaar_van_uitgave'] . '). ';
-        }
+        //if (isset($val['jaar_van_uitgave'])) {
+        //    $html .= ' (' . $val['jaar_van_uitgave'] . '). ';
+        //}
         $html .= '<i>' . $val['titel'] . '</i>';
         if (isset($val['jaar_van_uitgave'])) {
             $html .= ' (' . $val['jaar_van_uitgave'] . ')';

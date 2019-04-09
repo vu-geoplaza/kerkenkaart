@@ -107,7 +107,7 @@ class db {
         $sth->execute(array(":id" => $id));
         $res['architect'] = $sth->fetchAll(PDO::FETCH_ASSOC);
 
-        $sql = 'SELECT * FROM "014_Bronnen" WHERE "ID"=:id';
+        $sql = 'SELECT * FROM "014_Bronnen" WHERE "ID"=:id ORDER BY "Jaar_van_Uitgave" DESC';
         $sth = $this->dbh->prepare($sql);
         $sth->execute(array(":id" => $id));
         $res['bronnen'] = $sth->fetchAll(PDO::FETCH_ASSOC);
