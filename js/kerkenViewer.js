@@ -22,6 +22,7 @@ classification['denominatie'] = {
     "Gereformeerde Kerk (vrijgemaakt)": [227, 26, 28, 1],
     "Gereformeerde Kerken": [31, 120, 180, 1],
     //"Hersteld Hervormde Kerk": [255,127,0, 1],
+    //"Protestantse Kerk Nederland (PKN)": [255,127,0, 1],
     "Nederlandse Hervormde Kerk": [106, 61, 154, 1],
     "Nederlandse Protestantenbond": [202, 178, 214, 1],
     //"Nederlandse Protestanten Bond": [64, 0, 64, 1],
@@ -404,8 +405,8 @@ kerkenViewer.prototype.initMap = function (mapDiv, panelDiv) {
         type: 'base',
         name: 'cartodb-light',
         source: new ol.source.XYZ({
-            url: 'http://{1-4}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-            attributions: [new ol.Attribution({html: ['&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>']})]
+            url: 'https://{1-4}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            attributions: [new ol.Attribution({html: ['&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://cartodb.com/attributions">CartoDB</a>']})]
         })
 
     }));
@@ -711,13 +712,6 @@ kerkenViewer.prototype.loadSource = function (params, bZoom, kerkid, legendClass
             me.source = new ol.source.Vector({
                 features: features
             })
-
-            // maak feature source per gemeente, style cirkeldiagram
-            // maak feature source per provincie, style cirkeldiagram
-            // maak feature source individueel, style individueel
-            // en dan maak je dus 3 layers die afhankelijk van het zoomniveau/aantal zichtbaar zij
-            // met die moveend kan je wisselen 
-
 
             if (features.length < 300) {
                 me.clusterDistance = 0;
