@@ -36,6 +36,7 @@ classification['denominatie'] = {
     "Nederlandse Hervormde Kerk": [106, 61, 154, 1],
     "Nederlandse Protestantenbond": [202, 178, 214, 1],
     "Oud-Katholieke Kerk": [255, 255, 153, 1],
+    "Protestantse Kerk Nederland": [64, 0, 64, 1],
     "Remonstrantse Broederschap": [177, 89, 40, 1],
     "Rooms-katholieke Kerk": [255, 127, 0, 1],
     "Overig": [128, 128, 0, 1],
@@ -58,26 +59,6 @@ classification['type'] = {
 }
 
 
-//['rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()']
-/*
-classification['stijl'] = {
-    "neogotiek": [166, 206, 227, 1],
-    "modernisme - functionalisme": [31, 120, 180, 1],
-    "expressionisme": [178, 223, 138, 1],
-    "traditionalisme": [51, 160, 44, 1],
-    "neorenaissance": [251, 154, 153, 1],
-    "eclecticisme": [227, 26, 28, 1],
-    "neoromaans": [253, 191, 111, 1],
-    "classicisme": [],
-    "gotiek": [],
-    "renaissance": [],
-    "romaans":[],
-    "neoclassicisme": [255, 127, 0, 1],
-    "neobarok": [202, 178, 214, 1],
-    "rationalisme": [106, 61, 154, 1],
-    "Grey": [211, 211, 211, 1],
-}
-*/
 classification['stijl'] = {
     "neogotiek": hexToRgbA("#2f4f4f"),
     "modernisme - functionalisme": hexToRgbA("#8b4513"),
@@ -839,6 +820,11 @@ kerkenViewer.prototype.setStyle = function (legendClass) {
             }
         }
         var style = me.styleCache[uq];
+        if (typeof classification[legendClass][cat] == 'undefined'){
+            var symbolcolor = '#fff';
+        } else {
+            var symbolcolor = classification[legendClass][cat];
+        }
         if (!style) {
             //console.log('no cached style for ' + uq)
             if (num == 1) {
@@ -851,7 +837,7 @@ kerkenViewer.prototype.setStyle = function (legendClass) {
                             color: '#606060'
                         }),
                         fill: new ol.style.Fill({
-                            color: classification[legendClass][cat]
+                            color: symbolcolor
                         }),
                     }),
                     text: new ol.style.Text({
