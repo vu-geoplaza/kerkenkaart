@@ -98,12 +98,13 @@ classification['monument'] = {
 var period_scheme=[[255,247,236,1],[254,232,200,1],[253,212,158,1],[253,187,132,1],[252,141,89,1],[239,101,72,1],[215,48,31,1],[179,0,0,1],[127,0,0,1]];
 classification['periode'] = {
     "-1000": period_scheme[0],
-    "1000-1500": period_scheme[1],
-    "1500-1800": period_scheme[2],
-    "1800-1850": period_scheme[3],
-    "1850-1900": period_scheme[4],
-    "1900-1945": period_scheme[5],
-    "1945-": period_scheme[6],
+    "1000-1300": period_scheme[1],
+    "1300-1600": period_scheme[2],
+    "1600-1800": period_scheme[3],
+    "1800-1850": period_scheme[4],
+    "1850-1900": period_scheme[5],
+    "1900-1945": period_scheme[6],
+    "1945-": period_scheme[7],
     "onbekend": [211, 211, 211, 1]
 }
 
