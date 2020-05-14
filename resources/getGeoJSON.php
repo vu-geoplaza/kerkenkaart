@@ -1,10 +1,7 @@
- <?php
+<?php
 
 include('db.php');
-
 $db = new db();
-
-
 
 if (isset($_POST['filter'])) {
     $data = createGeoJSON($db->getFiltered($_POST['filter']));
@@ -24,6 +21,8 @@ echo json_encode($data);
  */
 Function createGeoJSON($l)
 {
+    $stijlen = ["neogotiek", "modernisme - functionalisme", "expressionisme", "traditionalisme", "neorenaissance", "eclecticisme", "neoromaans", "classicisme", "gotiek", "renaissance", "romaans", "neoclassicisme", "neobarok", "rationalisme", "overig"];
+    $denominaties = ["Christelijke Gereformeerde Kerk","Christian Science Church","Doopsgezinde Sociëteit","Evangelisch Lutherse Kerk","Gereformeerde Gemeente (in Nederland)", "Gereformeerde Kerk (vrijgemaakt)","Gereformeerde Kerken","Nederlandse Hervormde Kerk","Nederlandse Protestantenbond","Oud-Katholieke Kerk","Protestantse Kerk Nederland","Remonstrantse Broederschap","Rooms-katholieke Kerk"];
     $geo = new stdClass();
     $geo->type = "FeatureCollection";
     $geo->crs->properties->name = 'urn:ogc:def:crs:EPSG::4326';
@@ -32,37 +31,44 @@ Function createGeoJSON($l)
     $n = 0;
 
     foreach ($l as $row) {
-
-
-            $geo->features[$n] = new stdClass();
-            $geo->features[$n]->type = "Feature";
-            $geo->features[$n]->geometry = new stdClass();
-            $geo->features[$n]->geometry->type = "Point";
-            $geo->features[$n]->geometry->coordinates[0] = (double)$row['lon'];
-            $geo->features[$n]->geometry->coordinates[1] = (double)$row['lat'];
-            $geo->features[$n]->properties = new stdClass();
-            $geo->features[$n]->properties->kerk_id = $row['id'];
-            $geo->features[$n]->properties->naam = $row['naam'];
-            if ($row['denominatie']=='Nederlandse Protestanten Bond'){
-                $row['denominatie']='Nederlandse Protestantenbond';
-            }
-            if ($row['denominatie']=='Hersteld Hervormde Kerk'){
-                $row['denominatie']='Overig';
-            }
-            $geo->features[$n]->properties->denominatie = $row['denominatie'];
-            $geo->features[$n]->properties->type = $row['type'];
+        $geo->features[$n] = new stdClass();
+        $geo->features[$n]->type = "Feature";
+        $geo->features[$n]->geometry = new stdClass();
+        $geo->features[$n]->geometry->type = "Point";
+        $geo->features[$n]->geometry->coordinates[0] = (double)$row['lon'];
+        $geo->features[$n]->geometry->coordinates[1] = (double)$row['lat'];
+        $geo->features[$n]->properties = new stdClass();
+        $geo->features[$n]->properties->kerk_id = $row['id'];
+        $geo->features[$n]->properties->naam = $row['naam'];
+        $denominatie_column = 'denominatie_laatst'; // or 'denominatie' slightly different queries
+        if ($row[$denominatie_column] == 'Nederlandse Protestanten Bond') {
+            $row[$denominatie_column] = 'Nederlandse Protestantenbond';
+        }
+        if (!in_array($row[$denominatie_column], $denominaties)) {
+            $row[$denominatie_column] = 'Overig';
+        }
+        $geo->features[$n]->properties->denominatie = $row[$denominatie_column];
+        $geo->features[$n]->properties->type = $row['type'];
+        if ($row['stijl'] == "classisisme") { //typo
+            $row['stijl'] = "classicisme";
+        }
+        if (in_array($row['stijl'], $stijlen)) {
             $geo->features[$n]->properties->stijl = $row['stijl'];
-            if ($row['huidige_bestemming']=='kerk'){
-                $hb='kerk';
-            } else {
-                $hb='anders';
-            }
-            $geo->features[$n]->properties->huidige_bestemming = $hb;
-            $geo->features[$n]->properties->plaats = $row['plaats'];
-            $geo->features[$n]->properties->monument = $row['monument'];
-            $geo->features[$n]->properties->ingebruik = $row['ingebruik'];
-            $geo->features[$n]->properties->periode = $row['periode'];
-            $n++;
+        } else {
+            $geo->features[$n]->properties->stijl = "overig";
+        }
+
+        if ($row['huidige_bestemming'] == 'kerk') {
+            $hb = 'kerk';
+        } else {
+            $hb = 'anders';
+        }
+        $geo->features[$n]->properties->huidige_bestemming = $hb;
+        $geo->features[$n]->properties->plaats = $row['plaats'];
+        $geo->features[$n]->properties->monument = $row['monument'];
+        $geo->features[$n]->properties->ingebruik = $row['ingebruik'];
+        $geo->features[$n]->properties->periode = $row['periode'];
+        $n++;
     }
     return $geo;
 }

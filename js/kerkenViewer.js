@@ -10,7 +10,19 @@
  *
  */
 //['rgb(166,206,227)','rgb(31,120,180)','rgb(178,223,138)','rgb(51,160,44)','rgb(251,154,153)','rgb(227,26,28)','rgb(253,191,111)','rgb(255,127,0)','rgb(202,178,214)','rgb(106,61,154)','rgb(255,255,153)','rgb(177,89,40)']
-
+function hexToRgbA(hex){
+    var c;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        //return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+',1)';
+        return [(c>>16)&255, (c>>8)&255, c&255, 1];
+    }
+    throw new Error('Bad Hex');
+}
 var classification = {};
 
 classification['denominatie'] = {
@@ -21,18 +33,13 @@ classification['denominatie'] = {
     "Gereformeerde Gemeente (in Nederland)": [251, 154, 153, 1],
     "Gereformeerde Kerk (vrijgemaakt)": [227, 26, 28, 1],
     "Gereformeerde Kerken": [31, 120, 180, 1],
-    //"Hersteld Hervormde Kerk": [255,127,0, 1],
-    //"Protestantse Kerk Nederland (PKN)": [255,127,0, 1],
     "Nederlandse Hervormde Kerk": [106, 61, 154, 1],
     "Nederlandse Protestantenbond": [202, 178, 214, 1],
-    //"Nederlandse Protestanten Bond": [64, 0, 64, 1],
     "Oud-Katholieke Kerk": [255, 255, 153, 1],
-    //"PKN": [177,89,40, 1],
-    //"Gereformeerde Gemeente buiten Verband": [0, 255, 0, 1],
+    "Protestantse Kerk Nederland": [64, 0, 64, 1],
     "Remonstrantse Broederschap": [177, 89, 40, 1],
     "Rooms-katholieke Kerk": [255, 127, 0, 1],
     "Overig": [128, 128, 0, 1],
-    //"Nederlands Hervormde Kerk": [128, 128, 0, 1],
     "Grey": [211, 211, 211, 1],
 }
 
@@ -50,20 +57,27 @@ classification['type'] = {
     "zaalkerk": [152, 78, 163, 1],
     "Grey": [211, 211, 211, 1],
 }
-//['rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()','rgb()']
+
+
 classification['stijl'] = {
-    "neogotiek": [166, 206, 227, 1],
-    "modernisme - functionalisme": [31, 120, 180, 1],
-    "expressionisme": [178, 223, 138, 1],
-    "traditionalisme": [51, 160, 44, 1],
-    "neorenaissance": [251, 154, 153, 1],
-    "eclecticisme": [227, 26, 28, 1],
-    "neoromaans": [253, 191, 111, 1],
-    "neoclassicisme": [255, 127, 0, 1],
-    "neobarok": [202, 178, 214, 1],
-    "rationalisme": [106, 61, 154, 1],
-    "Grey": [211, 211, 211, 1],
+    "neogotiek": hexToRgbA("#2f4f4f"),
+    "modernisme - functionalisme": hexToRgbA("#8b4513"),
+    "expressionisme": hexToRgbA("#006400"),
+    "traditionalisme": hexToRgbA("#000080"),
+    "neorenaissance": hexToRgbA("#ff0000"),
+    "eclecticisme": hexToRgbA("#00ced1"),
+    "neoromaans": hexToRgbA("#ffa500"),
+    "classicisme": hexToRgbA("#ffff00"),
+    "gotiek": hexToRgbA("#00ff00"),
+    "renaissance": hexToRgbA("#0000ff"),
+    "romaans":hexToRgbA("#d8bfd8"),
+    "neoclassicisme": hexToRgbA("#ff00ff"),
+    "neobarok": hexToRgbA("#ff69b4"),
+    "rationalisme": hexToRgbA("#1e90ff"),
+    "overig": hexToRgbA("#C0C0C0"),
+    "Grey": hexToRgbA("#C0C0C0"),
 }
+
 
 classification['huidige_bestemming'] = {
     "kerk": [27, 158, 119, 1],
@@ -80,11 +94,17 @@ classification['monument'] = {
     "Grey": [211, 211, 211, 1],
 }
 
+
+var period_scheme=[[255,247,236,1],[254,232,200,1],[253,212,158,1],[253,187,132,1],[252,141,89,1],[239,101,72,1],[215,48,31,1],[179,0,0,1],[127,0,0,1]];
 classification['periode'] = {
-    "1800-1850": [254, 240, 217, 1],
-    "1850-1900": [253, 204, 138, 1],
-    "1900-1945": [252, 141, 89, 1],
-    "1945-1970": [215, 48, 31, 1],
+    "-1000": period_scheme[0],
+    "1000-1300": period_scheme[1],
+    "1300-1600": period_scheme[2],
+    "1600-1800": period_scheme[3],
+    "1800-1850": period_scheme[4],
+    "1850-1900": period_scheme[5],
+    "1900-1945": period_scheme[6],
+    "1945-": period_scheme[7],
     "onbekend": [211, 211, 211, 1]
 }
 
@@ -801,6 +821,11 @@ kerkenViewer.prototype.setStyle = function (legendClass) {
             }
         }
         var style = me.styleCache[uq];
+        if (typeof classification[legendClass][cat] == 'undefined'){
+            var symbolcolor = '#fff';
+        } else {
+            var symbolcolor = classification[legendClass][cat];
+        }
         if (!style) {
             //console.log('no cached style for ' + uq)
             if (num == 1) {
@@ -813,7 +838,7 @@ kerkenViewer.prototype.setStyle = function (legendClass) {
                             color: '#606060'
                         }),
                         fill: new ol.style.Fill({
-                            color: classification[legendClass][cat]
+                            color: symbolcolor
                         }),
                     }),
                     text: new ol.style.Text({
@@ -867,7 +892,8 @@ kerkenViewer.prototype.setStyle = function (legendClass) {
             }
             var n = index[cat];
             if (typeof pie_colors[n] == "undefined") {
-                pie_colors[n] = rgbToHex(classification[legendClass][cat]);
+                var color = classification[legendClass][cat];
+                pie_colors[n] = rgbToHex(color);
             }
             if (typeof pie_data[n] !== "undefined") {
                 pie_data[n]++;
