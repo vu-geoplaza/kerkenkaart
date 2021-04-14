@@ -569,6 +569,7 @@ kerkenViewer.prototype.initMap = function (mapDiv, panelDiv) {
     me.bagLayer = new ol.layer.Vector({
         name: 'bag',
         source: new ol.source.Vector(),
+        visible: true,
         style: new ol.style.Style({
             stroke: new ol.style.Stroke({
                 color: 'rgba(0, 0, 255, 1.0)',
@@ -579,7 +580,7 @@ kerkenViewer.prototype.initMap = function (mapDiv, panelDiv) {
             }),
         })
     })
-    viewer.map.addLayer(viewer.bagLayer);
+    this.map.addLayer(me.bagLayer);
 
 // Ininitializes opening the info div when clicking on a feature
     this.map.on('click', function (evt) {
@@ -979,6 +980,13 @@ kerkenViewer.prototype.highlightFeature = function (feature) {
     var source = this.highlightLayer.getSource();
     source.addFeature(highlight);
 };
+
+kerkenViewer.prototype.bagFeatures = function (features){
+    console.log('add '+features.length+' bag features');
+    let source = this.bagLayer.getSource();
+    source.addFeatures(features);
+}
+
 /**
  * remove the highlight feature from the map if it's shown
  * called when closing the info window
@@ -1190,31 +1198,29 @@ kerkenInfo.prototype.showBag = function (pand_id) {
     var me = this;
     console.log(('0' + pand_id).slice(-16))
     //https://geodata.nationaalgeoregister.nl/bag/wfs?&request=GetFeature&typeNames=bag:pand&count=5&outputFormat=application/json&cql_filter=bag:identificatie=402100001489136
-    $.get('https://geodata.nationaalgeoregister.nl/bag/wfs?', {
-            request: 'GetFeature',
-            typeNames: 'bag:pand',
-            count: 5,
-            outputFormat: 'application/json',
-            srsname: 'EPSG:3857',
-            cql_filter: 'bag:identificatie=' + pand_id
-        },
+    //https://geodata.nationaalgeoregister.nl/bag/wfs/v1_1?request=GetFeature&service=WFS&version=1.1.0&typeName=bag:pand&outputFormat=application%2Fjson
+    $.get('https://geodata.nationaalgeoregister.nl/bag/wfs/v1_1?', {
+          request: 'GetFeature',
+          service: 'WFS',
+          version: '1.1.0',
+          typeNames: 'bag:pand',
+          count: 5,
+          outputFormat: 'application/json',
+          srsname: 'EPSG:3857',
+          //cql_filter: 'identificatie=\'' + pand_id + '\''
+          featureId: 'pand.bag:' + pand_id
+      },
         function (res) {
             var geojsonFormat = new ol.format.GeoJSON();
-            var features = geojsonFormat.readFeatures(res, {
-                dataProjection: 'EPSG:3857',
-                featureProjection: 'EPSG:3857'
-            });
+            var features = geojsonFormat.readFeatures(res);
             if (features.length > 0) {
-                var source = viewer.bagLayer.getSource();
-                source.addFeatures(features)
+                viewer.bagFeatures(features);
 
                 var html = '<ul class="bagactueel">';
                 html += '<li><b>Status:</b><br> ' + features[0].get('status') + '</li>';
                 html += '<li><b>Gebruiksdoel:</b><br> ' + features[0].get('gebruiksdoel') + '</li>';
-                //html += '<li><a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?searchQuery="'+ pand_id.padStart(16, '0') +'>Zie BAG viewer</a></li>';
-                //https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?detailsObjectId=0362010002001823&objectId=0362100001082159
                 html += '<li><a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/index.html#?searchQuery=' + pand_id.padStart(16, '0') + '" target="bag">BAG viewer link</a></li>';
-                //html += '<li><b>Bouwjaar:</b><br> ' + features[0].get('bouwjaar') + '</li>';
+                html += '<li><b>Bouwjaar volgens BAG:</b><br> ' + features[0].get('bouwjaar') + '</li>';
                 //html += '<li><b>Actualiteitsdatum:</b><br> ' + features[0].get('actualiteitsdatum') + '</li>'; //niet ingevuld
                 html += '</ul>';
             } else {
